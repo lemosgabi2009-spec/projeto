@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QUIZ: Mundo Mágico da Disney</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-night: #06091e;
+      --bg-royal: #0d1642;
+      --gold: #ffd452;
+      --gold-deep: #d99b1e;
+      --gold-glow: rgba(255, 212, 82, 0.45);
+      --glass-bg: rgba(15, 23, 66, 0.72);
+      --glass-border: rgba(255, 212, 82, 0.28);
+      --text-main: #f8f6f0;
+      --text-muted: #b8c2e6;
+      --success: #34d399;
+      --danger: #fb7185;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-main);
+      background: radial-gradient(circle at 50% 0%, #1d2d7a 0%, #0b1238 48%, #040614 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Estrelas de fundo */
+    #stars-canvas, #fireworks-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    #stars-canvas { z-index: 0; }
+    #fireworks-canvas { z-index: 20; }
+
+    /* Arco mágico decorativo */
+    .magic-arc {
+      position: fixed;
+      top: -180px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 450px;
+      border-radius: 50%;
+      border-top: 2px dashed rgba(255, 212, 82, 0.25);
+      box-shadow: 0 -20px 80px rgba(99, 140, 255, 0.18);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app-wrapper {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    /* Cabeçalho */
+    .header {
+      text-align: center;
+      margin-bottom: 22px;
+      position: relative;
+    }
+
+    .sound-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      color: var(--gold);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      transition: all 0.25s ease;
+    }
+
+    .sound-btn:hover {
+      background: rgba(255, 212, 82, 0.18);
+      transform: scale(1.08);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      background: rgba(255, 212, 82, 0.12);
+      border: 1px solid rgba(255, 212, 82, 0.35);
+      color: var(--gold);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: clamp(1.65rem, 4.5vw, 2.45rem);
+      font-weight: 900;
+      background: linear-gradient(180deg, #fff8dc 0%, #ffd452 55%, #d69316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 18px rgba(255, 212, 82, 0.32));
+      line-height: 1.2;
+    }
+
+    /* Cartão principal */
+    .card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1.5px solid var(--glass-border);
+      border-radius: 26px;
+      padding: 32px 28px;
+      box-shadow:
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 15%;
+      right: 15%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    /* Tela Inicial */
+    .start-screen {
+      text-align: center;
+      padding: 12px 6px;
+    }
+
+    .castle-icon {
+      font-size: 4.2rem;
+      display: inline-block;
+      margin-bottom: 14px;
+      animation: float 3.2s ease-in-out infinite;
+      filter: drop-shadow(0 10px 24px rgba(255, 212, 82, 0.35));
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    .start-screen h2 {
+      font-size: 1.45rem;
+      margin-bottom: 10px;
+      color: #fff;
+    }
+
+    .start-screen p {
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      line-height: 1.6;
+      max-width: 480px;
+      margin: 0 auto 26px;
+    }
+
+    .btn-magic {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, #ffe27a 0%, #f5b921 55%, #d68e0d 100%);
+      color: #161103;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 1.02rem;
+      padding: 15px 34px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(245, 185, 33, 0.38);
+      transition: all 0.25s ease;
+    }
+
+    .btn-magic:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 34px rgba(255, 212, 82, 0.55);
+    }
+
+    .btn-magic:active {
+      transform: translateY(0);
+    }
+
+    /* Barra de Progresso */
+    .quiz-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      gap: 12px;
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .star-step {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text-muted);
+      transition: all 0.3s ease;
+    }
+
+    .star-step.active {
+      background: rgba(255, 212, 82, 0.22);
+      border-color: var(--gold);
+      color: var(--gold);
+      box-shadow: 0 0 14px rgba(255, 212, 82, 0.35);
+      transform: scale(1.1);
+    }
+
+    .star-step.correct {
+      background: rgba(52, 211, 153, 0.2);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .star-step.wrong {
+      background: rgba(251, 113, 133, 0.2);
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .score-pill {
+      background: rgba(255, 212, 82, 0.12);
+      border: 1px solid rgba(255, 212, 82, 0.3);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .movie-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #93b4ff;
+      background: rgba(99, 140, 255, 0.14);
+      border: 1px solid rgba(99, 140, 255, 0.28);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .question-text {
+      font-size: clamp(1.18rem, 3vw, 1.42rem);
+      font-weight: 700;
+      line-height: 1.45;
+      color: #ffffff;
+      margin-bottom: 22px;
+    }
+
+    /* Alternativas */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .option-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 15px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      position: relative;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      background: rgba(255, 212, 82, 0.12);
+      border-color: rgba(255, 212, 82, 0.65);
+      transform: translateX(4px);
+    }
+
+    .option-letter {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: rgba(255, 212, 82, 0.14);
+      border: 1px solid rgba(255, 212, 82, 0.35);
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+      transition: all 0.22s ease;
+    }
+
+    .option-btn:hover:not(:disabled) .option-letter {
+      background: var(--gold);
+      color: #161103;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .option-btn.correct {
+      background: rgba(52, 211, 153, 0.18);
+      border-color: var(--success);
+      color: #ecfdf5;
+    }
+
+    .option-btn.correct .option-letter {
+      background: var(--success);
+      border-color: var(--success);
+      color: #042f2e;
+    }
+
+    .option-btn.wrong {
+      background: rgba(251, 113, 133, 0.18);
+      border-color: var(--danger);
+      color: #fff1f2;
+    }
+
+    .option-btn.wrong .option-letter {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: #4c0519;
+    }
+
+    .option-status {
+      margin-left: auto;
+      font-size: 1.15rem;
+    }
+
+    /* Feedback */
+    .feedback-box {
+      margin-top: 20px;
+      padding: 15px 18px;
+      border-radius: 14px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      animation: fadeUp 0.28s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feedback-box.success {
+      background: rgba(52, 211, 153, 0.14);
+      border: 1px solid rgba(52, 211, 153, 0.45);
+      color: #a7f3d0;
+    }
+
+    .feedback-box.error {
+      background: rgba(251, 113, 133, 0.14);
+      border: 1px solid rgba(251, 113, 133, 0.45);
+      color: #fecdd3;
+    }
+
+    .btn-next {
+      background: var(--gold);
+      color: #161103;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 18px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 0.88rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .btn-next:hover {
+      background: #ffe380;
+      transform: scale(1.04);
+    }
+
+    /* Tela Final */
+    .result-screen {
+      text-align: center;
+      padding: 10px 4px;
+    }
+
+    .trophy {
+      font-size: 4rem;
+      margin-bottom: 10px;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .result-title {
+      font-family: 'Cinzel Decorative', serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .result-score-big {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .result-rank {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(255, 212, 82, 0.15);
+      border: 1px solid rgba(255, 212, 82, 0.35);
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 22px;
+    }
+
+    .summary-list {
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 26px;
+    }
+
+    .summary-item {
+      padding: 12px 15px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+
+    .summary-item .icon {
+      font-size: 1.05rem;
+      margin-top: 1px;
+    }
+
+    .summary-item strong {
+      display: block;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+
+    .summary-item span {
+      color: var(--text-muted);
+      font-size: 0.84rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 520px) {
+      .card {
+        padding: 24px 18px;
+      }
+      .feedback-box {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+      }
+      .sound-btn {
+        position: static;
+        margin: 0 auto 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars-canvas"></canvas>
+  <canvas id="fireworks-canvas"></canvas>
+  <div class="magic-arc"></div>
+
+  <div class="app-wrapper">
+    <header class="header">
+      <button id="sound-toggle" class="sound-btn" title="Ativar/Desativar sons mágicos">🔊</button>
+      <div class="badge">✨ Edição Especial Disney &amp; Pixar ✨</div>
+      <h1 class="title">QUIZ: MUNDO MÁGICO DA DISNEY</h1>
+    </header>
+
+    <main class="card">
+      <!-- Tela Inicial -->
+      <section id="start-screen" class="start-screen">
+        <div class="castle-icon">🏰</div>
+        <h2>Pronto para testar sua magia?</h2>
+        <p>
+          Responda a <strong>5 perguntas</strong> com alternativas sobre os maiores clássicos e animações inesquecíveis da Disney!
+        </p>
+        <button id="start-btn" class="btn-magic">✨ Começar o Quiz</button>
+      </section>
+
+      <!-- Tela do Quiz -->
+      <section id="quiz-screen" class="hidden">
+        <div class="quiz-top">
+          <div class="step-indicator" id="step-indicator"></div>
+          <div class="score-pill" id="score-pill">⭐ Pontos: 0</div>
+        </div>
+
+        <div class="movie-tag" id="movie-tag">🎬 Clássico Disney</div>
+        <h2 class="question-text" id="question-text"></h2>
+
+        <div class="options-grid" id="options-grid"></div>
+
+        <div id="feedback-box" class="feedback-box hidden">
+          <span id="feedback-text"></span>
+          <button id="next-btn" class="btn-next">Próxima ✨</button>
+        </div>
+      </section>
+
+      <!-- Tela Final -->
+      <section id="result-screen" class="result-screen hidden">
+        <div class="trophy" id="result-trophy">👑</div>
+        <h2 class="result-title">===== RESULTADO FINAL =====</h2>
+        <p class="result-score-big" id="result-score-text"></p>
+        <div class="result-rank" id="result-rank"></div>
+
+        <div class="summary-list" id="summary-list"></div>
+
+        <button id="restart-btn" class="btn-magic">🔄 Jogar Novamente</button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        movie: "Toy Story (1995)",
+        question: "1. Qual é o nome do brinquedo cowboy de Toy Story?",
+        options: ["Buzz Lightyear", "Woody", "Jessie", "Sr. Cabeça de Batata"],
+        correctIndex: 1,
+        correctMsg: "Correto! Muito bem!",
+        wrongMsg: "Errado! A resposta era Woody."
+      },
+      {
+        movie: "A Bela e a Fera (1991)",
+        question: "2. Qual é o nome do candelabro falante de A Bela e a Fera?",
+        options: ["Horloge", "Lumière", "Zip", "Gaston"],
+        correctIndex: 1,
+        correctMsg: "Acertou! Parabéns!",
+        wrongMsg: "Errado! A resposta era Lumière."
+      },
+      {
+        movie: "Frozen: Uma Aventura Congelante (2013)",
+        question: "3. Qual é o nome do reino de Elsa e Anna em Frozen?",
+        options: ["Corona", "Atlântica", "Arendelle", "Agrabah"],
+        correctIndex: 2,
+        correctMsg: "Muito bem! Você acertou!",
+        wrongMsg: "Errado! A resposta era Arendelle."
+      },
+      {
+        movie: "O Rei Leão (1994)",
+        question: "4. Qual é o nome do leão protagonista de O Rei Leão?",
+        options: ["Scar", "Kovu", "Simba", "Nala"],
+        correctIndex: 2,
+        correctMsg: "Correto! Você entende de filmes!",
+        wrongMsg: "Errado! A resposta era Simba."
+      },
+      {
+        movie: "Aladdin (1992)",
+        question: "5. Qual é o nome do macaco de estimação de Aladdin?",
+        options: ["Iago", "Rajah", "Abu", "Pascal"],
+        correctIndex: 2,
+        correctMsg: "Acertou! Parabéns!",
+        wrongMsg: "Errado! A resposta era Abu."
+      }
+    ];
+
+    const letters = ["A", "B", "C", "D"];
+    let currentIndex = 0;
+    let pontos = 0;
+    let userAnswers = [];
+    let soundEnabled = true;
+    let audioCtx = null;
+
+    // Elementos DOM
+    const startScreen = document.getElementById("start-screen");
+    const quizScreen = document.getElementById("quiz-screen");
+    const resultScreen = document.getElementById("result-screen");
+    const startBtn = document.getElementById("start-btn");
+    const restartBtn = document.getElementById("restart-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const soundToggle = document.getElementById("sound-toggle");
+
+    const stepIndicator = document.getElementById("step-indicator");
+    const scorePill = document.getElementById("score-pill");
+    const movieTag = document.getElementById("movie-tag");
+    const questionText = document.getElementById("question-text");
+    const optionsGrid = document.getElementById("options-grid");
+    const feedbackBox = document.getElementById("feedback-box");
+    const feedbackText = document.getElementById("feedback-text");
+
+    // Efeitos Sonoros Mágicos (Web Audio API)
+    function playTone(freqs, duration = 0.25, type = "sine") {
+      if (!soundEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const now = audioCtx.currentTime;
+        freqs.forEach((f, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(f, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + duration);
+        });
+      } catch (e) {}
+    }
+
+    soundToggle.addEventListener("click", () => {
+      soundEnabled = !soundEnabled;
+      soundToggle.textContent = soundEnabled ? "🔊" : "🔇";
+    });
+
+    function startQuiz() {
+      currentIndex = 0;
+      pontos = 0;
+      userAnswers = [];
+      stopFireworks();
+      startScreen.classList.add("hidden");
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      playTone([523.25, 659.25, 783.99, 1046.5], 0.35, "triangle");
+      renderQuestion();
+    }
+
+    function renderStepIndicator() {
+      stepIndicator.innerHTML = "";
+      quizData.forEach((_, idx) => {
+        const dot = document.createElement("div");
+        dot.className = "star-step";
+        if (idx < userAnswers.length) {
+          dot.classList.add(userAnswers[idx].isCorrect ? "correct" : "wrong");
+          dot.textContent = userAnswers[idx].isCorrect ? "★" : "✕";
+        } else if (idx === currentIndex) {
+          dot.classList.add("active");
+          dot.textContent = idx + 1;
+        } else {
+          dot.textContent = idx + 1;
+        }
+        stepIndicator.appendChild(dot);
+      });
+    }
+
+    function renderQuestion() {
+      const current = quizData[currentIndex];
+      renderStepIndicator();
+      scorePill.textContent = `⭐ Pontos: ${pontos}`;
+      movieTag.textContent = `🎬 ${current.movie}`;
+      questionText.textContent = current.question;
+      feedbackBox.classList.add("hidden");
+      feedbackBox.className = "feedback-box hidden";
+      optionsGrid.innerHTML = "";
+
+      current.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.innerHTML = `
+          <span class="option-letter">${letters[idx]}</span>
+          <span>${opt}</span>
+          <span class="option-status"></span>
+        `;
+        btn.addEventListener("click", () => selectOption(idx));
+        optionsGrid.appendChild(btn);
+      });
+    }
+
+    function selectOption(selectedIdx) {
+      const current = quizData[currentIndex];
+      const isCorrect = selectedIdx === current.correctIndex;
+      const buttons = optionsGrid.querySelectorAll(".option-btn");
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        const statusSpan = btn.querySelector(".option-status");
+        if (idx === current.correctIndex) {
+          btn.classList.add("correct");
+          statusSpan.textContent = "✨";
+        } else if (idx === selectedIdx && !isCorrect) {
+          btn.classList.add("wrong");
+          statusSpan.textContent = "❌";
+        }
+      });
+
+      if (isCorrect) {
+        pontos++;
+        scorePill.textContent = `⭐ Pontos: ${pontos}`;
+        feedbackText.textContent = `✨ ${current.correctMsg}`;
+        feedbackBox.className = "feedback-box success";
+        playTone([587.33, 783.99, 987.77, 1174.66], 0.3, "sine");
+      } else {
+        feedbackText.textContent = `💫 ${current.wrongMsg}`;
+        feedbackBox.className = "feedback-box error";
+        playTone([311.13, 246.94], 0.35, "sawtooth");
+      }
+
+      userAnswers.push({
+        question: current.question,
+        chosen: current.options[selectedIdx],
+        correct: current.options[current.correctIndex],
+        isCorrect
+      });
+
+      renderStepIndicator();
+      nextBtn.textContent = currentIndex === quizData.length - 1 ? "Ver Resultado 👑" : "Próxima ✨";
+      feedbackBox.classList.remove("hidden");
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentIndex++;
+      if (currentIndex < quizData.length) {
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    });
+
+    function showResults() {
+      quizScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+
+      const scoreText = document.getElementById("result-score-text");
+      const rankBadge = document.getElementById("result-rank");
+      const trophy = document.getElementById("result-trophy");
+      const summaryList = document.getElementById("summary-list");
+
+      scoreText.textContent = `Você acertou ${pontos} de ${quizData.length} perguntas!`;
+
+      if (pontos === 5) {
+        trophy.textContent = "👑";
+        rankBadge.textContent = "Realeza da Disney — Pontuação Perfeita!";
+        launchFireworks();
+        playTone([523.25, 659.25, 783.99, 1046.5, 1318.5], 0.45, "triangle");
+      } else if (pontos >= 3) {
+        trophy.textContent = "🪄";
+        rankBadge.textContent = "Aprendiz de Feiticeiro — Muito bem!";
+        launchFireworks();
+        playTone([523.25, 659.25, 783.99], 0.35, "triangle");
+      } else {
+        trophy.textContent = "🍿";
+        rankBadge.textContent = "Hora da Maratona Disney!";
+      }
+
+      summaryList.innerHTML = "";
+      userAnswers.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "summary-item";
+        div.innerHTML = `
+          <div class="icon">${item.isCorrect ? "✅" : "❌"}</div>
+          <div>
+            <strong>${item.question}</strong>
+            <span>${
+              item.isCorrect
+                ? `Sua resposta: ${item.chosen}`
+                : `Sua resposta: ${item.chosen} • Correta: ${item.correct}`
+            }</span>
+          </div>
+        `;
+        summaryList.appendChild(div);
+      });
+    }
+
+    startBtn.addEventListener("click", startQuiz);
+    restartBtn.addEventListener("click", startQuiz);
+
+    // Animação de Estrelas no Fundo
+    const starsCanvas = document.getElementById("stars-canvas");
+    const sCtx = starsCanvas.getContext("2d");
+    let stars = [];
+
+    function initStars() {
+      starsCanvas.width = window.innerWidth;
+      starsCanvas.height = window.innerHeight;
+      stars = Array.from({ length: 110 }, () => ({
+        x: Math.random() * starsCanvas.width,
+        y: Math.random() * starsCanvas.height,
+        r: Math.random() * 1.8 + 0.4,
+        alpha: Math.random(),
+        speed: Math.random() * 0.015 + 0.004
+      }));
+    }
+
+    function animateStars() {
+      sCtx.clearRect(0, 0, starsCanvas.width, starsCanvas.height);
+      stars.forEach((s) => {
+        s.alpha += s.speed;
+        const opacity = 0.25 + Math.abs(Math.sin(s.alpha)) * 0.75;
+        sCtx.beginPath();
+        sCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        sCtx.fillStyle = `rgba(255, 244, 200, ${opacity})`;
+        sCtx.fill();
+      });
+      requestAnimationFrame(animateStars);
+    }
+
+    window.addEventListener("resize", initStars);
+    initStars();
+    animateStars();
+
+    // Fogos de Artifício na Tela Final
+    const fwCanvas = document.getElementById("fireworks-canvas");
+    const fwCtx = fwCanvas.getContext("2d");
+    let particles = [];
+    let fwInterval = null;
+    let fwAnimId = null;
+
+    function createBurst() {
+      const x = Math.random() * fwCanvas.width * 0.8 + fwCanvas.width * 0.1;
+      const y = Math.random() * fwCanvas.height * 0.45 + fwCanvas.height * 0.1;
+      const colors = ["#ffd452", "#ff7eb3", "#7afcff", "#a7f3d0", "#ffffff"];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      for (let i = 0; i < 42; i++) {
+        const angle = (Math.PI * 2 * i) / 42;
+        const speed = Math.random() * 3.8 + 1.5;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          alpha: 1,
+          color
+        });
+      }
+    }
+
+    function animateFireworks() {
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.04;
+        p.alpha -= 0.015;
+        fwCtx.beginPath();
+        fwCtx.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+        fwCtx.fillStyle = p.color;
+        fwCtx.globalAlpha = Math.max(p.alpha, 0);
+        fwCtx.fill();
+      });
+      fwCtx.globalAlpha = 1;
+      particles = particles.filter((p) => p.alpha > 0);
+      fwAnimId = requestAnimationFrame(animateFireworks);
+    }
+
+    function launchFireworks() {
+      fwCanvas.width = window.innerWidth;
+      fwCanvas.height = window.innerHeight;
+      createBurst();
+      fwInterval = setInterval(createBurst, 950);
+      animateFireworks();
+    }
+
+    function stopFireworks() {
+      clearInterval(fwInterval);
+      cancelAnimationFrame(fwAnimId);
+      particles = [];
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+    }
+  </script>
+</body>
+</html>
